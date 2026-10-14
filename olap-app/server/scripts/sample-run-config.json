@@ -1,0 +1,32 @@
+{
+  "repeat": 3,
+  "runs": [
+    {
+      "label": "Report 1 by borough, pickup, no filters",
+      "report": "report1",
+      "level": "borough",
+      "direction": "pickup",
+      "filters": {}
+    },
+    {
+      "label": "Report 1 by zone, dropoff, top 10 in Manhattan",
+      "report": "report1",
+      "level": "zone",
+      "direction": "dropoff",
+      "filters": { "year": 2025, "borough": ["Manhattan"], "top_n": 10 }
+    },
+    {
+      "label": "Report 2 by month, pickup",
+      "report": "report2",
+      "level": "month",
+      "direction": "pickup",
+      "filters": { "year": 2025 }
+    },
+    {
+      "label": "Report 5 by borough, all filters empty",
+      "report": "report5",
+      "level": "borough",
+      "filters": {}
+    }
+  ]
+}

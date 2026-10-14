@@ -1,0 +1,15 @@
+{
+  "name": "olap-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OLAP web application for the NYC Green Taxi 2025 data warehouse",
+  "scripts": {
+    "postinstall": "npm install --prefix server && npm install --prefix client",
+    "dev": "concurrently -n server,client -c green,cyan \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "build": "npm run build --prefix client",
+    "run-reports": "npm run run-reports --prefix server --"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}
