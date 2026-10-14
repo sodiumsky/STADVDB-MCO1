@@ -13,12 +13,25 @@ You need Node.js 20 or newer and a running local MySQL with the warehouse loaded
 
 ```bash
 cd olap-app
-cp .env.example .env     # then edit .env with your MySQL host, user, password and database
+# create olap-app/.env first (see below)
 npm install              # installs the root, server and client packages
 npm run dev              # starts Express on :3001 and Vite on :5173
 ```
 
-Open http://localhost:5173. Vite proxies `/api` to Express, so there is nothing else to configure. If you change `PORT` in `.env`, restart `npm run dev`.
+Create `olap-app/.env` with your local MySQL details:
+
+```
+DB_HOST=localhost
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=your-password
+DB_NAME=nyc_green_taxi_warehouse_2025
+PORT=3001
+```
+
+`PORT` is the Express API port. Vite proxies `/api` to it.
+
+Open http://localhost:5173. If you change `PORT` in `.env`, restart `npm run dev`.
 
 `.env` is git-ignored. Never commit it.
 
@@ -145,7 +158,7 @@ Lookups and report runs return `rows`, `rowCount`, `ms`, `sql` and `params`, plu
 
 ```
 olap-app/
-  .env.example
+  .env                  your local MySQL details (git-ignored, you create it)
   server/
     index.js            Express app
     db.js               connection pool
