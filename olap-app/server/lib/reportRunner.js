@@ -15,13 +15,17 @@ function valueFor(name, ctx) {
     if (raw === undefined || raw === null || raw === '') return [];
     return (Array.isArray(raw) ? raw : [raw]).filter((v) => v !== '' && v !== null);
   }
-  if (raw === undefined || raw === null || raw === '') return null;
   if (name === 'top_n') {
+    // A blank or invalid Top N means "no limit", sent as the largest allowed value. Binding null
+    // to LIMIT ? would make MySQL return zero rows.
     const n = Math.floor(Number(raw));
-    if (!Number.isFinite(n) || n < 1) return null;
+    const limit = raw === undefined || raw === null || raw === '' || !Number.isFinite(n) || n < 1
+      ? FILTERS.top_n.max
+      : Math.min(n, FILTERS.top_n.max);
     // mysql2 sends JS numbers as DOUBLE, which MySQL rejects for LIMIT ?. A string is accepted.
-    return String(Math.min(n, FILTERS.top_n.max));
+    return String(limit);
   }
+  if (raw === undefined || raw === null || raw === '') return null;
   return raw;
 }
 

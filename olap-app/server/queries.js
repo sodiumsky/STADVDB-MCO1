@@ -27,6 +27,7 @@
 //
 // TOP N
 //   Write `LIMIT ?` and list 'top_n'. The server sends it in a form MySQL accepts for LIMIT.
+//   A blank Top N is sent as 1000, the largest allowed value, so it never returns zero rows.
 //
 // WHAT THE RESULT SHOULD LOOK LIKE
 //   First column: the label for each row (a bar's category, a line's x value, a pie slice).
@@ -101,48 +102,96 @@ const reports = {
   // Report 1: Busiest pickup and drop-off zones. Levels borough > zone; pickup, dropoff, combined.
   // 'combined' = pickups and drop-offs added together per location.
   report1_borough_pickup: {
-    // written by the team (first version, not optimized, no ? placeholders yet)
-    sql: `select 'Borough' as level_type, dim_zone.borough as location_name, 'ALL' as zone_name, count(*) as total_trips
-from fact_trip, dim_zone
-where fact_trip.pickup_zone_key = dim_zone.zone_key
-group by dim_zone.borough`,
-    params: [],
+    sql: `SELECT
+            dim_zone.borough AS label,
+            COUNT(*) AS total_trips
+          FROM fact_trip, dim_zone
+          WHERE fact_trip.pickup_zone_key = dim_zone.zone_key
+            AND dim_zone.borough IS NOT NULL
+            AND dim_zone.borough != 'Unknown'
+            AND (? IS NULL OR dim_zone.borough IN (?))
+          GROUP BY dim_zone.borough
+          ORDER BY total_trips DESC
+          LIMIT ?`,
+    params: ['borough', 'borough', 'top_n'],
   },
   report1_borough_dropoff: {
-    // written by the team
-    sql: '',
-    params: ['borough', 'top_n'],
+    sql: `SELECT
+            dim_zone.borough AS label,
+            COUNT(*) AS total_trips
+          FROM fact_trip, dim_zone
+          WHERE fact_trip.dropoff_zone_key = dim_zone.zone_key
+            AND dim_zone.borough IS NOT NULL
+            AND dim_zone.borough != 'Unknown'
+            AND (? IS NULL OR dim_zone.borough IN (?))
+          GROUP BY dim_zone.borough
+          ORDER BY total_trips DESC
+          LIMIT ?`,
+    params: ['borough', 'borough', 'top_n'],
   },
   report1_borough_combined: {
-    // written by the team
-    sql: '',
-    params: ['borough', 'top_n'],
+    sql: `SELECT
+            z.borough AS label,
+            SUM(t.cnt) AS total_trips
+          FROM (
+            SELECT pickup_zone_key AS zk, COUNT(*) AS cnt FROM fact_trip GROUP BY pickup_zone_key
+            UNION ALL
+            SELECT dropoff_zone_key AS zk, COUNT(*) AS cnt FROM fact_trip GROUP BY dropoff_zone_key
+          ) t, dim_zone z
+          WHERE t.zk = z.zone_key
+            AND z.borough IS NOT NULL
+            AND z.borough != 'Unknown'
+            AND (? IS NULL OR z.borough IN (?))
+          GROUP BY z.borough
+          ORDER BY total_trips DESC
+          LIMIT ?`,
+    params: ['borough', 'borough', 'top_n'],
   },
   report1_zone_pickup: {
-    // written by the team (first version, not optimized, no ? placeholders yet)
-    sql: `select 'Zone' as level_type, dim_zone.borough as location_name, dim_zone.zone_name as zone_name, count(*) as total_trips
-from fact_trip, dim_zone
-where fact_trip.pickup_zone_key = dim_zone.zone_key
-group by dim_zone.borough, dim_zone.zone_name`,
-    params: [],
+    sql: `SELECT
+            dim_zone.zone_name AS label,
+            COUNT(*) AS total_trips
+          FROM fact_trip, dim_zone
+          WHERE fact_trip.pickup_zone_key = dim_zone.zone_key
+            AND dim_zone.zone_name IS NOT NULL
+            AND dim_zone.zone_name != 'Unknown'
+            AND (? IS NULL OR dim_zone.borough IN (?))
+          GROUP BY dim_zone.zone_key, dim_zone.zone_name
+          ORDER BY total_trips DESC
+          LIMIT ?`,
+    params: ['borough', 'borough', 'top_n'],
   },
   report1_zone_dropoff: {
-    // written by the team
-    sql: '',
-    params: ['borough', 'top_n'],
+    sql: `SELECT
+            dim_zone.zone_name AS label,
+            COUNT(*) AS total_trips
+          FROM fact_trip, dim_zone
+          WHERE fact_trip.dropoff_zone_key = dim_zone.zone_key
+            AND dim_zone.zone_name IS NOT NULL
+            AND dim_zone.zone_name != 'Unknown'
+            AND (? IS NULL OR dim_zone.borough IN (?))
+          GROUP BY dim_zone.zone_key, dim_zone.zone_name
+          ORDER BY total_trips DESC
+          LIMIT ?`,
+    params: ['borough', 'borough', 'top_n'],
   },
   report1_zone_combined: {
-    // written by the team (first version, not optimized, no ? placeholders yet)
-    sql: `select 'Combined' as level_type, z.borough, z.zone_name, sum(t.cnt) as total_trips
-from (
-    select pickup_zone_key as zk, count(*) as cnt from fact_trip group by pickup_zone_key
-    union all
-    select dropoff_zone_key as zk, count(*) as cnt from fact_trip group by dropoff_zone_key
-) t, dim_zone z
-where t.zk = z.zone_key
-group by z.borough, z.zone_name
-order by total_trips desc`,
-    params: [],
+    sql: `SELECT
+            z.zone_name AS label,
+            SUM(t.cnt) AS total_trips
+          FROM (
+            SELECT pickup_zone_key AS zk, COUNT(*) AS cnt FROM fact_trip GROUP BY pickup_zone_key
+            UNION ALL
+            SELECT dropoff_zone_key AS zk, COUNT(*) AS cnt FROM fact_trip GROUP BY dropoff_zone_key
+          ) t, dim_zone z
+          WHERE t.zk = z.zone_key
+            AND z.zone_name IS NOT NULL
+            AND z.zone_name != 'Unknown'
+            AND (? IS NULL OR z.borough IN (?))
+          GROUP BY z.zone_key, z.zone_name
+          ORDER BY total_trips DESC
+          LIMIT ?`,
+    params: ['borough', 'borough', 'top_n'],
   },
 
   // Report 2: Taxi activity over the year. Levels quarter > month > day; no direction switch.

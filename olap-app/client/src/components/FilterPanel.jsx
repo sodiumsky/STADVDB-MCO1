@@ -118,7 +118,7 @@ function NumberField({ id, def, name, value, onChange }) {
         value={value}
         onChange={(e) => onChange(name, e.target.value)}
       />
-      <span className="field-hint">Leave blank to send no limit.</span>
+      <span className="field-hint">Leave blank to show up to {def.max} rows.</span>
     </div>
   );
 }

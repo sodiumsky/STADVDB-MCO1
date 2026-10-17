@@ -56,7 +56,7 @@ Rules:
 1. **Use `?` placeholders only.** Values are always bound, never put into the SQL text. Only `SELECT` or `WITH ... SELECT` runs.
 2. **`params` lists the filter names for the `?` placeholders, in the order the `?` appear.** A name can repeat. Available names: `year`, `quarter`, `month`, `month_from`, `month_to`, `day`, `time_period`, `hour`, `borough`, `zone`, `payment_type`, `top_n`, `level`, `direction`.
 3. **Multi-select filters (`borough`, `zone`, `payment_type`) are arrays.** Write `IN (?)`. The server expands it to one `?` per chosen value and binds each one. An empty selection means no filter: outside an `IN (?)` it is passed as `null`, so `(? IS NULL OR col IN (?))` with `params: [..., 'borough', 'borough']` works.
-4. **Top N:** write `LIMIT ?` and list `top_n`. A blank Top N is passed as `null`.
+4. **Top N:** write `LIMIT ?` and list `top_n`. A blank Top N is sent as 1000, the largest allowed value, because binding `null` to `LIMIT ?` returns zero rows.
 5. **Result shape:**
    - The first column is the label (bar category, line x value, pie slice).
    - The other columns are numbers. If there is more than one, the chart gets a Measure picker (one measure per chart, never two axes).
