@@ -282,9 +282,33 @@ const reports = {
 
   // Report 4: Fares, distance and payment by location. No levels, no direction switch.
   report4: {
-    // written by the team
-    sql: '',
-    params: ['borough', 'month_from', 'month_to', 'payment_type'],
+    sql: `SELECT
+            dim_zone.borough AS label,
+            dim_payment.payment_description AS payment_method,
+            COUNT(*) AS total_trips,
+            ROUND(AVG(fact_trip.trip_distance), 2) AS avg_distance,
+            ROUND(AVG(fact_trip.fare_amount), 2) AS avg_fare,
+            ROUND(AVG(fact_trip.total_amount), 2) AS avg_total
+          FROM fact_trip, dim_zone, dim_date, dim_payment
+          WHERE fact_trip.pickup_zone_key = dim_zone.zone_key
+            AND fact_trip.pickup_date_key = dim_date.date_key
+            AND fact_trip.payment_key = dim_payment.payment_key
+            AND dim_zone.borough IS NOT NULL
+            AND dim_zone.borough != 'Unknown'
+            AND (? IS NULL OR dim_date.year_number = ?)
+            AND (? IS NULL OR dim_zone.borough IN (?))
+            AND (? IS NULL OR dim_date.month_number >= ?)
+            AND (? IS NULL OR dim_date.month_number <= ?)
+            AND (? IS NULL OR fact_trip.payment_key IN (?))
+          GROUP BY dim_zone.borough, dim_payment.payment_description
+          ORDER BY dim_zone.borough ASC, total_trips DESC`,
+    params: [
+      'year', 'year',
+      'borough', 'borough',
+      'month_from', 'month_from',
+      'month_to', 'month_to',
+      'payment_type', 'payment_type',
+    ],
   },
 };
 
