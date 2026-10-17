@@ -651,8 +651,12 @@ select:disabled,
   border-radius: var(--radius-sm) 0 0 var(--radius-sm);
 }
 
-.segmented label:nth-last-of-type(1) {
+.segmented label + label {
   margin-left: -1px;
+  border-radius: 0;
+}
+
+.segmented label:nth-last-of-type(1) {
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
 

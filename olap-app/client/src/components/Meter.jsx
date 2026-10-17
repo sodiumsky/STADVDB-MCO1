@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { directionLabel } from '../lib/labels.js';
 import { formatNumber } from '../lib/result.js';
 
 // Counts up to `target` once when a result lands. Skipped when the viewer prefers reduced motion.
@@ -53,7 +54,7 @@ export default function Meter({ rowCount, ms, levelLabel, direction, runId }) {
       {direction && (
         <div className="meter-cell meter-cell-text">
           <span className="meter-label">Zone</span>
-          <span className="meter-text">{direction === 'pickup' ? 'Pickup' : 'Drop-off'}</span>
+          <span className="meter-text">{directionLabel(direction)}</span>
         </div>
       )}
       <span className="sr-only">

@@ -1,4 +1,5 @@
 import { ChevronsDown, ChevronsUp } from 'lucide-react';
+import { directionLabel } from '../lib/labels.js';
 
 export function Breadcrumbs({ report, drill, onRollTo }) {
   const crumbs = report.levels.slice(0, drill.levelIndex + 1);
@@ -51,7 +52,7 @@ export function DirectionSwitch({ directions, value, onChange }) {
       {directions.map((d) => (
         <label key={d} className={value === d ? 'is-on' : ''}>
           <input type="radio" name="direction" value={d} checked={value === d} onChange={() => onChange(d)} />
-          <span>{d === 'pickup' ? 'Pickup' : 'Drop-off'}</span>
+          <span>{directionLabel(d)}</span>
         </label>
       ))}
     </fieldset>

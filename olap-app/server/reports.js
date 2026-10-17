@@ -10,6 +10,8 @@ const FILTERS = {
   year: { label: 'Year', control: 'select', lookup: 'year' },
   quarter: { label: 'Quarter', control: 'select', lookup: 'quarter' },
   month: { label: 'Month', control: 'select', lookup: 'month' },
+  month_from: { label: 'From month', control: 'select', lookup: 'month' },
+  month_to: { label: 'To month', control: 'select', lookup: 'month' },
   day: { label: 'Day', control: 'select', lookup: 'day' },
   time_period: { label: 'Time period', control: 'select', lookup: 'time_period' },
   hour: { label: 'Hour', control: 'select', lookup: 'hour' },
@@ -29,82 +31,73 @@ const FILTERS = {
 //                 id     part of the query key, e.g. 'borough' -> report1_borough_pickup
 //                 label  shown in the UI
 //                 filter the FILTERS key that a clicked member is applied to on the next level
-//   directions  ['pickup', 'dropoff'] adds a switch and a suffix on the query key; [] for none
+//   directions  adds a switch and a suffix on the query key. Known values: 'pickup', 'dropoff',
+//               'combined' (see lib/labels.js in the client). [] for no switch.
 //   chart       'bar' | 'line' | 'pie' | 'table'
 const REPORTS = [
   {
     id: 'report1',
-    title: 'Report 1',
-    description: 'Placeholder. Rename it and describe the business question it answers.',
+    title: 'Busiest pickup and drop-off zones',
+    description:
+      'Which zones have the most trips? Start with trips by borough, then drill into its taxi zones. ' +
+      'Switch between pickups, drop-offs, or both added together.',
     operations: ['Roll-up', 'Drill-down'],
-    filters: ['year', 'borough', 'payment_type', 'top_n'],
+    filters: ['borough', 'top_n'],
     levels: [
       { id: 'borough', label: 'Borough', filter: 'borough' },
       { id: 'zone', label: 'Taxi zone', filter: 'zone' },
     ],
-    directions: ['pickup', 'dropoff'],
+    directions: ['pickup', 'dropoff', 'combined'],
     chart: 'bar',
   },
   {
     id: 'report2',
-    title: 'Report 2',
-    description: 'Placeholder. Rename it and describe the business question it answers.',
+    title: 'Taxi activity over the year',
+    description:
+      'How do trip volume and revenue change through 2025? Start with quarters, then drill into months and days. ' +
+      'Fix one borough or zone to compare places.',
     operations: ['Drill-down', 'Slice'],
-    filters: ['borough', 'payment_type'],
+    filters: ['borough', 'zone'],
     levels: [
-      { id: 'year', label: 'Year', filter: 'year' },
       { id: 'quarter', label: 'Quarter', filter: 'quarter' },
       { id: 'month', label: 'Month', filter: 'month' },
       { id: 'day', label: 'Day', filter: 'day' },
     ],
-    directions: ['pickup', 'dropoff'],
+    directions: [],
     chart: 'line',
   },
   {
     id: 'report3',
-    title: 'Report 3',
-    description: 'Placeholder. Rename it and describe the business question it answers.',
-    operations: ['Slice', 'Dice'],
-    filters: ['month', 'borough', 'payment_type'],
+    title: 'Busiest times of day by location',
+    description:
+      'When is each borough busiest? Compare boroughs across time periods, then drill into the hours of one period.',
+    operations: ['Pivot', 'Drill-down'],
+    filters: ['borough'],
     levels: [
       { id: 'time_period', label: 'Time period', filter: 'time_period' },
       { id: 'hour', label: 'Hour', filter: 'hour' },
     ],
-    directions: ['pickup', 'dropoff'],
+    directions: [],
     chart: 'bar',
   },
   {
     id: 'report4',
-    title: 'Report 4',
-    description: 'Placeholder. Rename it and describe the business question it answers.',
-    operations: ['Dice'],
-    filters: ['year', 'quarter', 'borough', 'zone'],
+    title: 'Fares, distance and payment by location',
+    description:
+      'How do trips differ by place and payment method? Combine boroughs, a range of months and payment types ' +
+      'to compare average distance, average fare and trip counts.',
+    operations: ['Dice', 'Slice'],
+    filters: ['borough', 'month_from', 'month_to', 'payment_type'],
     levels: [],
-    directions: ['pickup', 'dropoff'],
-    chart: 'pie',
-  },
-  {
-    id: 'report5',
-    title: 'Report 5',
-    description: 'Placeholder. Rename it and describe the business question it answers.',
-    operations: ['Pivot', 'Dice'],
-    filters: [
-      'year', 'quarter', 'month', 'day', 'time_period', 'hour',
-      'borough', 'zone', 'payment_type', 'top_n',
-    ],
-    levels: [
-      { id: 'borough', label: 'Borough', filter: 'borough' },
-      { id: 'zone', label: 'Taxi zone', filter: 'zone' },
-    ],
     directions: [],
-    chart: 'table',
+    chart: 'bar',
   },
 ];
 
 // The key of the queries.js entry that runs a report at a given level and direction.
 //   report1 + borough + pickup -> report1_borough_pickup
-//   report4 (no levels) + dropoff -> report4_dropoff
-//   report5 + zone (no directions) -> report5_zone
+//   report2 + month (no directions) -> report2_month
+//   report4 (no levels, no directions) -> report4
 function queryKey(report, levelId, direction) {
   return [report.id, report.levels.length ? levelId : null, report.directions.length ? direction : null]
     .filter(Boolean)

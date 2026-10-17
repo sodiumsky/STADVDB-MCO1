@@ -8,10 +8,14 @@
 //           string with values.
 //   params  The filter names that fill the `?` placeholders, in the order the `?` appear in `sql`.
 //           A name can appear more than once. Available names:
-//             year, quarter, month, day, time_period, hour,   (single value, or null if not chosen)
-//             borough, zone, payment_type,                    (arrays, [] if nothing chosen)
-//             top_n                                           (integer, or null)
-//             level, direction                                (the current level id / 'pickup' | 'dropoff')
+//             year, quarter, month, month_from, month_to, day,   (single value, or null if not chosen)
+//             time_period, hour,                                 (single value, or null if not chosen)
+//             borough, zone, payment_type,                       (arrays, [] if nothing chosen)
+//             top_n                                              (integer, or null)
+//             level, direction                                   (the current level id / direction)
+//           The lists below are a starting point: edit them to match the `?` in your SQL.
+//           Deeper drill levels list the filters set by the drill (for example report2_day lists
+//           quarter and month, because clicking a quarter and then a month sets them).
 //
 // MULTI-SELECT FILTERS (borough, zone, payment_type)
 //   Write `IN (?)`. The server expands that one `?` into one `?` per chosen value and binds every
@@ -36,17 +40,11 @@
 //   lookups: the filter name. A lookup returns rows with columns `value` and `label`
 //   (or, if those are missing, the first column as the value and the second as the label).
 
-const REPORT1_PARAMS = ['year', 'borough', 'payment_type', 'top_n'];
-const REPORT2_PARAMS = ['borough', 'payment_type'];
-const REPORT3_PARAMS = ['month', 'borough', 'payment_type'];
-const REPORT4_PARAMS = ['year', 'quarter', 'borough', 'zone'];
-const REPORT5_PARAMS = [
-  'year', 'quarter', 'month', 'day', 'time_period', 'hour',
-  'borough', 'zone', 'payment_type', 'top_n',
-];
-
 // ---------------------------------------------------------------------------------------------
 // Filter lookups (dropdown options)
+// Used by: borough (reports 1-4), zone (report 2), payment_type (report 4), month (report 4,
+// as both From month and To month). The rest are not shown by any report yet but are kept so a
+// report can start using them without a registry change.
 // ---------------------------------------------------------------------------------------------
 const lookups = {
   year: {
@@ -100,114 +98,87 @@ const lookups = {
 // Reports
 // ---------------------------------------------------------------------------------------------
 const reports = {
-  // Report 1: levels borough > zone, pickup / dropoff
+  // Report 1: Busiest pickup and drop-off zones. Levels borough > zone; pickup, dropoff, combined.
+  // 'combined' = pickups and drop-offs added together per location.
   report1_borough_pickup: {
-    // written by the team
-    sql: '',
-    params: REPORT1_PARAMS,
+    // written by the team (first version, not optimized, no ? placeholders yet)
+    sql: `select 'Borough' as level_type, dim_zone.borough as location_name, 'ALL' as zone_name, count(*) as total_trips
+from fact_trip, dim_zone
+where fact_trip.pickup_zone_key = dim_zone.zone_key
+group by dim_zone.borough`,
+    params: [],
   },
   report1_borough_dropoff: {
     // written by the team
     sql: '',
-    params: REPORT1_PARAMS,
+    params: ['borough', 'top_n'],
   },
-  report1_zone_pickup: {
+  report1_borough_combined: {
     // written by the team
     sql: '',
-    params: REPORT1_PARAMS,
+    params: ['borough', 'top_n'],
+  },
+  report1_zone_pickup: {
+    // written by the team (first version, not optimized, no ? placeholders yet)
+    sql: `select 'Zone' as level_type, dim_zone.borough as location_name, dim_zone.zone_name as zone_name, count(*) as total_trips
+from fact_trip, dim_zone
+where fact_trip.pickup_zone_key = dim_zone.zone_key
+group by dim_zone.borough, dim_zone.zone_name`,
+    params: [],
   },
   report1_zone_dropoff: {
     // written by the team
     sql: '',
-    params: REPORT1_PARAMS,
+    params: ['borough', 'top_n'],
+  },
+  report1_zone_combined: {
+    // written by the team (first version, not optimized, no ? placeholders yet)
+    sql: `select 'Combined' as level_type, z.borough, z.zone_name, sum(t.cnt) as total_trips
+from (
+    select pickup_zone_key as zk, count(*) as cnt from fact_trip group by pickup_zone_key
+    union all
+    select dropoff_zone_key as zk, count(*) as cnt from fact_trip group by dropoff_zone_key
+) t, dim_zone z
+where t.zk = z.zone_key
+group by z.borough, z.zone_name
+order by total_trips desc`,
+    params: [],
   },
 
-  // Report 2: levels year > quarter > month > day, pickup / dropoff
-  report2_year_pickup: {
+  // Report 2: Taxi activity over the year. Levels quarter > month > day; no direction switch.
+  report2_quarter: {
     // written by the team
     sql: '',
-    params: REPORT2_PARAMS,
+    params: ['borough', 'zone'],
   },
-  report2_year_dropoff: {
+  report2_month: {
     // written by the team
     sql: '',
-    params: REPORT2_PARAMS,
+    params: ['quarter', 'borough', 'zone'],
   },
-  report2_quarter_pickup: {
+  report2_day: {
     // written by the team
     sql: '',
-    params: REPORT2_PARAMS,
-  },
-  report2_quarter_dropoff: {
-    // written by the team
-    sql: '',
-    params: REPORT2_PARAMS,
-  },
-  report2_month_pickup: {
-    // written by the team
-    sql: '',
-    params: REPORT2_PARAMS,
-  },
-  report2_month_dropoff: {
-    // written by the team
-    sql: '',
-    params: REPORT2_PARAMS,
-  },
-  report2_day_pickup: {
-    // written by the team
-    sql: '',
-    params: REPORT2_PARAMS,
-  },
-  report2_day_dropoff: {
-    // written by the team
-    sql: '',
-    params: REPORT2_PARAMS,
+    params: ['quarter', 'month', 'borough', 'zone'],
   },
 
-  // Report 3: levels time_period > hour, pickup / dropoff
-  report3_time_period_pickup: {
+  // Report 3: Busiest times of day by location. Levels time_period > hour; no direction switch.
+  report3_time_period: {
     // written by the team
     sql: '',
-    params: REPORT3_PARAMS,
+    params: ['borough'],
   },
-  report3_time_period_dropoff: {
+  report3_hour: {
     // written by the team
     sql: '',
-    params: REPORT3_PARAMS,
-  },
-  report3_hour_pickup: {
-    // written by the team
-    sql: '',
-    params: REPORT3_PARAMS,
-  },
-  report3_hour_dropoff: {
-    // written by the team
-    sql: '',
-    params: REPORT3_PARAMS,
+    params: ['time_period', 'borough'],
   },
 
-  // Report 4: no levels, pickup / dropoff
-  report4_pickup: {
+  // Report 4: Fares, distance and payment by location. No levels, no direction switch.
+  report4: {
     // written by the team
     sql: '',
-    params: REPORT4_PARAMS,
-  },
-  report4_dropoff: {
-    // written by the team
-    sql: '',
-    params: REPORT4_PARAMS,
-  },
-
-  // Report 5: levels borough > zone, no direction switch
-  report5_borough: {
-    // written by the team
-    sql: '',
-    params: REPORT5_PARAMS,
-  },
-  report5_zone: {
-    // written by the team
-    sql: '',
-    params: REPORT5_PARAMS,
+    params: ['borough', 'month_from', 'month_to', 'payment_type'],
   },
 };
 

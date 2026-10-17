@@ -25,7 +25,7 @@ DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=your-password
-DB_NAME=nyc_green_taxi_warehouse_2025
+DB_NAME=green_taxi_dw
 PORT=3001
 ```
 
@@ -54,7 +54,7 @@ report1_borough_pickup: {
 Rules:
 
 1. **Use `?` placeholders only.** Values are always bound, never put into the SQL text. Only `SELECT` or `WITH ... SELECT` runs.
-2. **`params` lists the filter names for the `?` placeholders, in the order the `?` appear.** A name can repeat. Available names: `year`, `quarter`, `month`, `day`, `time_period`, `hour`, `borough`, `zone`, `payment_type`, `top_n`, `level`, `direction`.
+2. **`params` lists the filter names for the `?` placeholders, in the order the `?` appear.** A name can repeat. Available names: `year`, `quarter`, `month`, `month_from`, `month_to`, `day`, `time_period`, `hour`, `borough`, `zone`, `payment_type`, `top_n`, `level`, `direction`.
 3. **Multi-select filters (`borough`, `zone`, `payment_type`) are arrays.** Write `IN (?)`. The server expands it to one `?` per chosen value and binds each one. An empty selection means no filter: outside an `IN (?)` it is passed as `null`, so `(? IS NULL OR col IN (?))` with `params: [..., 'borough', 'borough']` works.
 4. **Top N:** write `LIMIT ?` and list `top_n`. A blank Top N is passed as `null`.
 5. **Result shape:**
@@ -72,8 +72,9 @@ A report's key is built from its id, the current level and the pickup/drop-off s
 | Report has | Key |
 |---|---|
 | levels and directions | `report1_borough_pickup` |
-| directions only | `report4_dropoff` |
-| levels only | `report5_zone` |
+| directions only | `report4_dropoff` (no report has this shape right now) |
+| levels only | `report2_month` |
+| neither | `report4` |
 
 `queryKey()` in `server/reports.js` is the single place that builds these. If a key has no entry in `queries.js`, the UI says which entry is missing.
 
@@ -92,7 +93,7 @@ Add an object to `REPORTS` in `server/reports.js`:
     { id: 'time_period', label: 'Time period', filter: 'time_period' },
     { id: 'hour', label: 'Hour', filter: 'hour' },
   ],
-  directions: ['pickup', 'dropoff'],         // adds the switch; [] for none
+  directions: ['pickup', 'dropoff'],         // adds the switch ('combined' is also supported); [] for none
   chart: 'bar',                              // 'bar' | 'line' | 'pie' | 'table'
 },
 ```
