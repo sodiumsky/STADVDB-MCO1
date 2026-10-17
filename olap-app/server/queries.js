@@ -249,14 +249,35 @@ const reports = {
 
   // Report 3: Busiest times of day by location. Levels time_period > hour; no direction switch.
   report3_time_period: {
-    // written by the team
-    sql: '',
-    params: ['borough'],
+    sql: `SELECT
+            dim_time.time_period AS label,
+            COUNT(*) AS total_trips,
+            dim_time.time_period AS member_value
+          FROM fact_trip, dim_zone, dim_time
+          WHERE fact_trip.pickup_zone_key = dim_zone.zone_key
+            AND fact_trip.pickup_time_key = dim_time.time_key
+            AND dim_zone.borough IS NOT NULL
+            AND dim_zone.borough != 'Unknown'
+            AND (? IS NULL OR dim_zone.borough IN (?))
+          GROUP BY dim_time.time_period
+          ORDER BY MIN(dim_time.hour_number) ASC`,
+    params: ['borough', 'borough'],
   },
   report3_hour: {
-    // written by the team
-    sql: '',
-    params: ['time_period', 'borough'],
+    sql: `SELECT
+            CONCAT(CAST(dim_time.hour_number AS CHAR), ':00') AS label,
+            COUNT(*) AS total_trips,
+            dim_time.hour_number AS member_value
+          FROM fact_trip, dim_zone, dim_time
+          WHERE fact_trip.pickup_zone_key = dim_zone.zone_key
+            AND fact_trip.pickup_time_key = dim_time.time_key
+            AND dim_zone.borough IS NOT NULL
+            AND dim_zone.borough != 'Unknown'
+            AND (? IS NULL OR dim_time.time_period = ?)
+            AND (? IS NULL OR dim_zone.borough IN (?))
+          GROUP BY dim_time.hour_number
+          ORDER BY dim_time.hour_number ASC`,
+    params: ['time_period', 'time_period', 'borough', 'borough'],
   },
 
   // Report 4: Fares, distance and payment by location. No levels, no direction switch.
