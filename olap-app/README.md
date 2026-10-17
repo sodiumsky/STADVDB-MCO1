@@ -1,178 +1,97 @@
 # Green Taxi OLAP app
 
-A web app for exploring the NYC Green Taxi 2025 data warehouse with roll-up, drill-down, slice, dice and pivot.
+A web dashboard for the NYC Green Taxi 2025 data warehouse. It has four reports with roll-up, drill-down, slice, dice and pivot. No SQL needed to use it.
 
-- `server/` is Node.js, Express and `mysql2/promise`.
-- `client/` is React with Vite, React Router and Chart.js (`react-chartjs-2`).
+- `server/`: Node.js, Express, MySQL.
+- `client/`: React, Vite, Chart.js.
 
-**The app contains no warehouse SQL.** Every `sql` string in `server/queries.js` is empty and is written by the team. Until a query is filled in, its report shows "Query not written yet" and its dropdown shows "Lookup not written yet".
+## Run it
 
-## Setup
+**You need:** Node.js 20+ (check with `node --version`) and a running local MySQL with the warehouse loaded.
 
-You need Node.js 20 or newer and a running local MySQL with the warehouse loaded.
+1. **Get the code**
+   ```bash
+   git clone https://github.com/sodiumsky/STADVDB-MCO1.git
+   cd STADVDB-MCO1
+   git checkout olap
+   cd olap-app
+   ```
+2. **Create `olap-app/.env`** (exactly that name, no `.txt`) with your MySQL details:
+   ```
+   DB_HOST=localhost
+   DB_PORT=3306
+   DB_USER=root
+   DB_PASSWORD=your-password
+   DB_NAME=your-warehouse-database
+   PORT=3001
+   ```
+   `DB_NAME` is the database that holds `fact_trip`, `dim_date` and the other tables. Wrap a password containing `#` or `$` in single quotes. `.env` is git-ignored, so it is never committed.
+3. **Install (once):** `npm install`
+4. **Start:** `npm run dev`
+5. **Open** http://localhost:5173. The top right should say "Connected to" and your database name.
+6. **Stop:** `Ctrl+C` in the terminal. Start again later with `npm run dev`.
 
-```bash
-cd olap-app
-# create olap-app/.env first (see below)
-npm install              # installs the root, server and client packages
-npm run dev              # starts Express on :3001 and Vite on :5173
-```
+## Use it
 
-Create `olap-app/.env` with your local MySQL details:
+Open a report from the home page, then:
 
-```
-DB_HOST=localhost
-DB_PORT=3306
-DB_USER=root
-DB_PASSWORD=your-password
-DB_NAME=green_taxi_dw
-PORT=3001
-```
+- **Filters (left):** "All" means no filter. Set **Year to 2025**, since the data contains a few trips with wrong dates. Click **Run report**.
+- **Drill down / Roll up:** move to a finer or coarser level. You can also **click a bar, point, slice or table name** to drill into it. The breadcrumbs show the path; click one to go back.
+- **Slice and dice:** one filter value is a slice. Several filters, or several boroughs ticked, are a dice.
+- **Pickup / Drop-off / Combined switch:** picks which zone of the trip the report uses.
+- **Pivot:** swaps the table's rows and columns. **Export CSV** saves the table.
+- **Measure menu:** appears when a result has more than one number. It picks which one the chart draws.
+- **SQL and parameters used:** shows the exact query and values, for checking.
 
-`PORT` is the Express API port. Vite proxies `/api` to it.
+| Report | Question | Operations |
+|---|---|---|
+| Busiest pickup and drop-off zones | Which zones have the most trips? | Roll-up, drill-down |
+| Taxi activity over the year | How do trips and revenue change over the year? | Drill-down, slice |
+| Busiest times of day by location | When is each borough busiest? | Pivot, drill-down |
+| Fares, distance and payment by location | How do trips differ by place and payment? | Dice, slice |
 
-Open http://localhost:5173. If you change `PORT` in `.env`, restart `npm run dev`.
+## Troubleshooting
 
-`.env` is git-ignored. Never commit it.
+| You see | Do this |
+|---|---|
+| "Database offline" | Start MySQL, then click the refresh icon next to the message. |
+| "rejected the username or password" | Fix `DB_USER` / `DB_PASSWORD` in `.env`, then restart. |
+| "database ... does not exist" | Fix `DB_NAME` in `.env`, then restart. |
+| `Unknown column` / `Unknown table` | You connected to a different warehouse. The queries need `year`, `quarter`, `month`, `day`, `hour` in `dim_date` / `dim_time`. |
+| Empty or disabled dropdown | Read the small message under it; usually the database is not connected. |
+| "The query returned no rows" | Set filters back to "All" (and Year 2025). |
+| `Cannot find module` | Run `npm install` in `olap-app`. |
+| Port already in use | An old copy is running. Stop it with `Ctrl+C`. |
 
-The header shows which database the app is connected to. If MySQL is down or the credentials are wrong, it says so and tells you which `.env` value to check. The Retry button re-checks the connection.
+`.env` is read only at startup, so restart after changing it. Edits to `queries.js` or `reports.js` apply on a browser refresh.
 
-## Adding a query to `queries.js`
+## For the team
 
-Open `server/queries.js`. It has two groups of entries: `lookups` (dropdown options) and `reports` (one per report, level and direction).
+**Files:** `server/queries.js` (all SQL), `server/reports.js` (reports, filters, levels, chart types), `server/queries_previos.js` (old queries, not used), `server/scripts/` (test runner).
 
-Fill in an entry like this:
+**Query entries** in `queries.js` look like this:
 
 ```js
 report1_borough_pickup: {
-  // written by the team
-  sql: '...your SELECT with ? placeholders...',
-  params: ['year', 'borough', 'payment_type', 'top_n'],
+  sql: `SELECT ... WHERE (? IS NULL OR dim_zone.borough IN (?)) ... LIMIT ?`,
+  params: ['borough', 'borough', 'top_n'],
 },
 ```
 
-Rules:
+- Use `?` placeholders only, never build SQL from values. Only `SELECT` / `WITH` runs.
+- `params` lists the filter names for each `?`, in order. The counts must match.
+  Names: `year`, `quarter`, `month`, `month_from`, `month_to`, `day`, `time_period`, `hour`, `borough`, `zone`, `payment_type`, `top_n`, `level`, `direction`.
+- `borough`, `zone` and `payment_type` are lists: write `IN (?)`. An empty list is `null` outside an `IN`, so `(? IS NULL OR col IN (?))` means "no filter".
+- `LIMIT ?` with `top_n`. A blank Top N is sent as 1000.
+- **First column = label.** Other columns = numbers. An optional `member_value` column is what a click passes to the next level (hidden from view). Lookups return `value` and `label`.
+- **Entry names:** `<report>[_<level>][_<direction>]`, for example `report1_borough_pickup`, `report2_month`, `report4`.
 
-1. **Use `?` placeholders only.** Values are always bound, never put into the SQL text. Only `SELECT` or `WITH ... SELECT` runs.
-2. **`params` lists the filter names for the `?` placeholders, in the order the `?` appear.** A name can repeat. Available names: `year`, `quarter`, `month`, `month_from`, `month_to`, `day`, `time_period`, `hour`, `borough`, `zone`, `payment_type`, `top_n`, `level`, `direction`.
-3. **Multi-select filters (`borough`, `zone`, `payment_type`) are arrays.** Write `IN (?)`. The server expands it to one `?` per chosen value and binds each one. An empty selection means no filter: outside an `IN (?)` it is passed as `null`, so `(? IS NULL OR col IN (?))` with `params: [..., 'borough', 'borough']` works.
-4. **Top N:** write `LIMIT ?` and list `top_n`. A blank Top N is sent as 1000, the largest allowed value, because binding `null` to `LIMIT ?` returns zero rows.
-5. **Result shape:**
-   - The first column is the label (bar category, line x value, pie slice).
-   - The other columns are numbers. If there is more than one, the chart gets a Measure picker (one measure per chart, never two axes).
-   - An optional `member_value` column holds the value to apply to the next level's filter when a row is clicked, if it differs from the label, for example label `January` and `member_value` `1`. It is hidden from the chart and table.
-6. **Lookups** return `value` and `label` columns. If those are missing, the first column is the value and the second is the label.
+**Add a report:** add an object to `REPORTS` in `reports.js` (`id`, `title`, `description`, `operations`, `filters`, `levels`, `directions`, `chart`), then add one `queries.js` entry per level and direction. In `levels`, `filter` is the filter that receives the clicked item when you drill from that level.
 
-The panel under each result shows the exact SQL, the parameter values you were given and the values bound to the `?` placeholders. Use it to debug.
-
-### Query keys
-
-A report's key is built from its id, the current level and the pickup/drop-off switch, skipping the parts the report does not have:
-
-| Report has | Key |
-|---|---|
-| levels and directions | `report1_borough_pickup` |
-| directions only | `report4_dropoff` (no report has this shape right now) |
-| levels only | `report2_month` |
-| neither | `report4` |
-
-`queryKey()` in `server/reports.js` is the single place that builds these. If a key has no entry in `queries.js`, the UI says which entry is missing.
-
-## Registering a new report
-
-Add an object to `REPORTS` in `server/reports.js`:
-
-```js
-{
-  id: 'report6',                 // used in the URL and as the key prefix
-  title: 'Peak hours by borough',
-  description: 'Which hours carry the most trips in each borough.',
-  operations: ['Slice', 'Roll-up'],          // shown as tags
-  filters: ['year', 'borough', 'top_n'],     // keys of FILTERS, in display order
-  levels: [                                  // drill hierarchy, coarsest first; [] for none
-    { id: 'time_period', label: 'Time period', filter: 'time_period' },
-    { id: 'hour', label: 'Hour', filter: 'hour' },
-  ],
-  directions: ['pickup', 'dropoff'],         // adds the switch ('combined' is also supported); [] for none
-  chart: 'bar',                              // 'bar' | 'line' | 'pie' | 'table'
-},
-```
-
-Then add one entry to `reports` in `server/queries.js` for every combination of level and direction, using the keys above (here `report6_time_period_pickup`, `report6_time_period_dropoff`, `report6_hour_pickup`, `report6_hour_dropoff`). The report appears on the home page after the server restarts (`npm run dev` restarts it for you).
-
-How drilling works:
-
-- **Drill down** moves to the next level. **Roll up** moves back one.
-- **Clicking a bar, slice, point or a first-column table cell** drills into that member. The member is applied to the `filter` named on the level you came from and the next level's query runs.
-- The breadcrumbs show the path. Click a crumb to roll up to that level. Filters set by a drill are locked in the filter panel until you roll up.
-- Each level has its own query entry, so each one can be written and tuned separately.
-
-A filter only appears for a report if it is in that report's `filters` list. Add a filter control to `FILTERS` only if you need a new kind.
-
-## Pivot, export and the SQL panel
-
-- **Pivot** (above the table) swaps rows and columns in the browser. Nothing is re-queried.
-- **Export CSV** downloads the current result's rows as returned by the query.
-- **SQL and parameters used** is a collapsible panel under the results.
-
-## Test runner
-
-`server/scripts/run-reports.js` runs reports from a JSON file and writes the row count and time of each run to a CSV. Use it for functional and performance testing.
-
+**Test runner:** runs reports from a JSON file and writes row count and time to a CSV in `test-results/`.
 ```bash
-npm run run-reports -- scripts/sample-run-config.json            # from olap-app/
-# or: cd server && node scripts/run-reports.js scripts/sample-run-config.json out.csv
+npm run run-reports -- scripts/sample-run-config.json
 ```
+Each run: `{ "label", "report", "level", "direction", "filters", "repeat" }`. See the sample file.
 
-The input is a JSON array, or `{ "repeat": 3, "runs": [...] }`:
-
-```json
-{
-  "repeat": 3,
-  "runs": [
-    {
-      "label": "Report 1 by zone, drop-off, Manhattan",
-      "report": "report1",
-      "level": "zone",
-      "direction": "dropoff",
-      "filters": { "year": 2025, "borough": ["Manhattan"], "top_n": 10 },
-      "repeat": 5
-    }
-  ]
-}
-```
-
-`level` and `direction` default to the report's first ones. `repeat` on a run overrides the global one. Output goes to `olap-app/test-results/run-<timestamp>.csv` unless you pass a path. Columns: `label, report, key, level, direction, filters, run, status, rowCount, ms, error`. `status` is `ok`, `not-written` or `error`.
-
-## API
-
-| Route | What it does |
-|---|---|
-| `GET /api/health` | Connection check. Runs `SELECT 1` and `SELECT DATABASE()` only. |
-| `GET /api/reports` | The report registry and filter definitions. |
-| `GET /api/lookups/:name` | Runs a lookup. |
-| `POST /api/reports/:id/run` | Body `{ filters, level, direction }`. Runs a report. |
-
-Lookups and report runs return `rows`, `rowCount`, `ms`, `sql` and `params`, plus `paramNames` (each name with the value it was given) and `notWritten` (`true` when the entry's `sql` is empty).
-
-## Folder layout
-
-```
-olap-app/
-  .env                  your local MySQL details (git-ignored, you create it)
-  server/
-    index.js            Express app
-    db.js               connection pool
-    queries.js          all warehouse SQL (empty, written by the team)
-    reports.js          report registry and filter definitions
-    routes/api.js
-    lib/                query execution, report runner, error mapping
-    scripts/            run-reports.js and a sample config
-  client/
-    vite.config.js      proxies /api to Express
-    src/
-      pages/            Home, ReportPage
-      components/       filters, drill controls, chart, table, meter, SQL panel
-      lib/              hierarchy, pivot, csv, lookups, result helpers
-      styles/global.css
-```
+**API:** `GET /api/health`, `GET /api/reports`, `GET /api/lookups/:name`, `POST /api/reports/:id/run` with `{ filters, level, direction }`.
