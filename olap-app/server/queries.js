@@ -196,19 +196,55 @@ const reports = {
 
   // Report 2: Taxi activity over the year. Levels quarter > month > day; no direction switch.
   report2_quarter: {
-    // written by the team
-    sql: '',
-    params: ['borough', 'zone'],
+    sql: `SELECT
+            CONCAT('Q', dim_date.quarter_number) AS label,
+            COUNT(fact_trip.trip_key) AS total_trips,
+            ROUND(SUM(fact_trip.total_amount), 2) AS total_revenue,
+            dim_date.quarter_number AS member_value
+          FROM fact_trip, dim_date, dim_zone
+          WHERE fact_trip.pickup_date_key = dim_date.date_key
+            AND fact_trip.pickup_zone_key = dim_zone.zone_key
+            AND dim_date.year_number = 2025
+            AND (? IS NULL OR dim_zone.borough IN (?))
+            AND (? IS NULL OR dim_zone.zone_key IN (?))
+          GROUP BY dim_date.quarter_number
+          ORDER BY dim_date.quarter_number ASC`,
+    params: ['borough', 'borough', 'zone', 'zone'],
   },
   report2_month: {
-    // written by the team
-    sql: '',
-    params: ['quarter', 'borough', 'zone'],
+    sql: `SELECT
+            dim_date.month_name AS label,
+            COUNT(fact_trip.trip_key) AS total_trips,
+            ROUND(SUM(fact_trip.total_amount), 2) AS total_revenue,
+            dim_date.month_number AS member_value
+          FROM fact_trip, dim_date, dim_zone
+          WHERE fact_trip.pickup_date_key = dim_date.date_key
+            AND fact_trip.pickup_zone_key = dim_zone.zone_key
+            AND dim_date.year_number = 2025
+            AND (? IS NULL OR dim_date.quarter_number = ?)
+            AND (? IS NULL OR dim_zone.borough IN (?))
+            AND (? IS NULL OR dim_zone.zone_key IN (?))
+          GROUP BY dim_date.month_number, dim_date.month_name
+          ORDER BY dim_date.month_number ASC`,
+    params: ['quarter', 'quarter', 'borough', 'borough', 'zone', 'zone'],
   },
   report2_day: {
-    // written by the team
-    sql: '',
-    params: ['quarter', 'month', 'borough', 'zone'],
+    sql: `SELECT
+            CAST(dim_date.day_number AS CHAR) AS label,
+            COUNT(fact_trip.trip_key) AS total_trips,
+            ROUND(SUM(fact_trip.total_amount), 2) AS total_revenue,
+            dim_date.day_number AS member_value
+          FROM fact_trip, dim_date, dim_zone
+          WHERE fact_trip.pickup_date_key = dim_date.date_key
+            AND fact_trip.pickup_zone_key = dim_zone.zone_key
+            AND dim_date.year_number = 2025
+            AND (? IS NULL OR dim_date.quarter_number = ?)
+            AND (? IS NULL OR dim_date.month_number = ?)
+            AND (? IS NULL OR dim_zone.borough IN (?))
+            AND (? IS NULL OR dim_zone.zone_key IN (?))
+          GROUP BY dim_date.day_number
+          ORDER BY dim_date.day_number ASC`,
+    params: ['quarter', 'quarter', 'month', 'month', 'borough', 'borough', 'zone', 'zone'],
   },
 
   // Report 3: Busiest times of day by location. Levels time_period > hour; no direction switch.
