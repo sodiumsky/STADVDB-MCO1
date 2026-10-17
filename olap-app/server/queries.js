@@ -49,47 +49,47 @@
 const lookups = {
   year: {
     // written by the team
-    sql: '',
+    sql: `SELECT DISTINCT year_number AS value, CAST(year_number AS CHAR) AS label FROM dim_date ORDER BY year_number DESC`,
     params: [],
   },
   quarter: {
     // written by the team
-    sql: '',
+    sql: `SELECT DISTINCT quarter_number AS value, CONCAT('Q', quarter_number) AS label FROM dim_date ORDER BY quarter_number ASC`,
     params: [],
   },
   month: {
     // written by the team
-    sql: '',
+    sql: `SELECT DISTINCT month_number AS value, month_name AS label FROM dim_date ORDER BY month_number ASC`,
     params: [],
   },
   day: {
     // written by the team
-    sql: '',
+    sql: `SELECT DISTINCT day_number AS value, CAST(day_number AS CHAR) AS label FROM dim_date ORDER BY day_number ASC`,
     params: [],
   },
   time_period: {
     // written by the team
-    sql: '',
+    sql: `SELECT time_period AS value, time_period AS label FROM dim_time GROUP BY time_period ORDER BY MIN(hour_number) ASC`,
     params: [],
   },
   hour: {
     // written by the team
-    sql: '',
+    sql: `SELECT DISTINCT hour_number AS value, CONCAT(CAST(hour_number AS CHAR), ':00') AS label FROM dim_time ORDER BY hour_number ASC`,
     params: [],
   },
   borough: {
     // written by the team
-    sql: '',
+    sql: `SELECT DISTINCT borough AS value, borough AS label FROM dim_zone WHERE borough IS NOT NULL AND borough != 'Unknown' ORDER BY borough ASC`,
     params: [],
   },
   zone: {
     // written by the team
-    sql: '',
+    sql: `SELECT zone_key AS value, zone_name AS label FROM dim_zone WHERE zone_name IS NOT NULL AND zone_name != 'Unknown' ORDER BY zone_name ASC`,
     params: [],
   },
   payment_type: {
     // written by the team
-    sql: '',
+    sql: `SELECT DISTINCT payment_key AS value, payment_description AS label FROM dim_payment ORDER BY payment_description ASC`,
     params: [],
   },
 };
