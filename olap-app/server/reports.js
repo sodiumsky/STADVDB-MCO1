@@ -57,7 +57,7 @@ const REPORTS = [
       'How do trip volume and revenue change through 2025? Start with quarters, then drill into months and days. ' +
       'Fix one borough or zone to compare places.',
     operations: ['Drill-down', 'Slice'],
-    filters: ['borough', 'zone'],
+    filters: ['year', 'borough', 'zone'],
     levels: [
       { id: 'quarter', label: 'Quarter', filter: 'quarter' },
       { id: 'month', label: 'Month', filter: 'month' },
@@ -70,11 +70,12 @@ const REPORTS = [
     id: 'report3',
     title: 'Busiest times of day by location',
     description:
-      'When is each borough busiest? Compare boroughs across time periods, then drill into the hours of one period.',
+      'When is each borough busiest? Compare boroughs across time periods, then drill into the hours of one borough.',
     operations: ['Pivot', 'Drill-down'],
     filters: ['borough'],
     levels: [
-      { id: 'time_period', label: 'Time period', filter: 'time_period' },
+      // This level lists boroughs with a column per time period, so a clicked row is a borough.
+      { id: 'time_period', label: 'Time period', filter: 'borough' },
       { id: 'hour', label: 'Hour', filter: 'hour' },
     ],
     directions: [],
@@ -87,7 +88,7 @@ const REPORTS = [
       'How do trips differ by place and payment method? Combine boroughs, a range of months and payment types ' +
       'to compare average distance, average fare and trip counts.',
     operations: ['Dice', 'Slice'],
-    filters: ['borough', 'month_from', 'month_to', 'payment_type'],
+    filters: ['year', 'borough', 'month_from', 'month_to', 'payment_type'],
     levels: [],
     directions: [],
     chart: 'bar',

@@ -50,32 +50,32 @@
 const lookups = {
   year: {
     // written by the team
-    sql: `SELECT DISTINCT year_number AS value, CAST(year_number AS CHAR) AS label FROM dim_date ORDER BY year_number DESC`,
+    sql: `SELECT DISTINCT year AS value, CAST(year AS CHAR) AS label FROM dim_date ORDER BY year DESC`,
     params: [],
   },
   quarter: {
     // written by the team
-    sql: `SELECT DISTINCT quarter_number AS value, CONCAT('Q', quarter_number) AS label FROM dim_date ORDER BY quarter_number ASC`,
+    sql: `SELECT DISTINCT quarter AS value, CONCAT('Q', quarter) AS label FROM dim_date ORDER BY quarter ASC`,
     params: [],
   },
   month: {
     // written by the team
-    sql: `SELECT DISTINCT month_number AS value, month_name AS label FROM dim_date ORDER BY month_number ASC`,
+    sql: `SELECT DISTINCT month AS value, month_name AS label FROM dim_date ORDER BY month ASC`,
     params: [],
   },
   day: {
     // written by the team
-    sql: `SELECT DISTINCT day_number AS value, CAST(day_number AS CHAR) AS label FROM dim_date ORDER BY day_number ASC`,
+    sql: `SELECT DISTINCT day AS value, CAST(day AS CHAR) AS label FROM dim_date ORDER BY day ASC`,
     params: [],
   },
   time_period: {
     // written by the team
-    sql: `SELECT time_period AS value, time_period AS label FROM dim_time GROUP BY time_period ORDER BY MIN(hour_number) ASC`,
+    sql: `SELECT time_period AS value, time_period AS label FROM dim_time GROUP BY time_period ORDER BY MIN(hour) ASC`,
     params: [],
   },
   hour: {
     // written by the team
-    sql: `SELECT DISTINCT hour_number AS value, CONCAT(CAST(hour_number AS CHAR), ':00') AS label FROM dim_time ORDER BY hour_number ASC`,
+    sql: `SELECT DISTINCT hour AS value, CONCAT(CAST(hour AS CHAR), ':00') AS label FROM dim_time ORDER BY hour ASC`,
     params: [],
   },
   borough: {
@@ -84,8 +84,7 @@ const lookups = {
     params: [],
   },
   zone: {
-    // written by the team
-    sql: `SELECT zone_key AS value, zone_name AS label FROM dim_zone WHERE zone_name IS NOT NULL AND zone_name != 'Unknown' ORDER BY zone_name ASC`,
+    sql: `SELECT zone_key AS value, zone_name AS label FROM dim_zone WHERE zone_key != 0 AND zone_name IS NOT NULL ORDER BY zone_name ASC`,
     params: [],
   },
   payment_type: {
@@ -153,8 +152,8 @@ const reports = {
             COUNT(*) AS total_trips
           FROM fact_trip, dim_zone
           WHERE fact_trip.pickup_zone_key = dim_zone.zone_key
+            AND dim_zone.zone_key != 0
             AND dim_zone.zone_name IS NOT NULL
-            AND dim_zone.zone_name != 'Unknown'
             AND (? IS NULL OR dim_zone.borough IN (?))
           GROUP BY dim_zone.zone_key, dim_zone.zone_name
           ORDER BY total_trips DESC
@@ -167,8 +166,8 @@ const reports = {
             COUNT(*) AS total_trips
           FROM fact_trip, dim_zone
           WHERE fact_trip.dropoff_zone_key = dim_zone.zone_key
+            AND dim_zone.zone_key != 0
             AND dim_zone.zone_name IS NOT NULL
-            AND dim_zone.zone_name != 'Unknown'
             AND (? IS NULL OR dim_zone.borough IN (?))
           GROUP BY dim_zone.zone_key, dim_zone.zone_name
           ORDER BY total_trips DESC
@@ -185,8 +184,8 @@ const reports = {
             SELECT dropoff_zone_key AS zk, COUNT(*) AS cnt FROM fact_trip GROUP BY dropoff_zone_key
           ) t, dim_zone z
           WHERE t.zk = z.zone_key
+            AND z.zone_key != 0
             AND z.zone_name IS NOT NULL
-            AND z.zone_name != 'Unknown'
             AND (? IS NULL OR z.borough IN (?))
           GROUP BY z.zone_key, z.zone_name
           ORDER BY total_trips DESC
@@ -197,94 +196,96 @@ const reports = {
   // Report 2: Taxi activity over the year. Levels quarter > month > day; no direction switch.
   report2_quarter: {
     sql: `SELECT
-            CONCAT('Q', dim_date.quarter_number) AS label,
+            CONCAT('Q', dim_date.quarter) AS label,
             COUNT(fact_trip.trip_key) AS total_trips,
             ROUND(SUM(fact_trip.total_amount), 2) AS total_revenue,
-            dim_date.quarter_number AS member_value
+            dim_date.quarter AS member_value
           FROM fact_trip, dim_date, dim_zone
           WHERE fact_trip.pickup_date_key = dim_date.date_key
             AND fact_trip.pickup_zone_key = dim_zone.zone_key
-            AND dim_date.year_number = 2025
+            AND (? IS NULL OR dim_date.year = ?)
             AND (? IS NULL OR dim_zone.borough IN (?))
             AND (? IS NULL OR dim_zone.zone_key IN (?))
-          GROUP BY dim_date.quarter_number
-          ORDER BY dim_date.quarter_number ASC`,
-    params: ['borough', 'borough', 'zone', 'zone'],
+          GROUP BY dim_date.quarter
+          ORDER BY dim_date.quarter ASC`,
+    params: ['year', 'year', 'borough', 'borough', 'zone', 'zone'],
   },
   report2_month: {
     sql: `SELECT
             dim_date.month_name AS label,
             COUNT(fact_trip.trip_key) AS total_trips,
             ROUND(SUM(fact_trip.total_amount), 2) AS total_revenue,
-            dim_date.month_number AS member_value
+            dim_date.month AS member_value
           FROM fact_trip, dim_date, dim_zone
           WHERE fact_trip.pickup_date_key = dim_date.date_key
             AND fact_trip.pickup_zone_key = dim_zone.zone_key
-            AND dim_date.year_number = 2025
-            AND (? IS NULL OR dim_date.quarter_number = ?)
+            AND (? IS NULL OR dim_date.year = ?)
+            AND (? IS NULL OR dim_date.quarter = ?)
             AND (? IS NULL OR dim_zone.borough IN (?))
             AND (? IS NULL OR dim_zone.zone_key IN (?))
-          GROUP BY dim_date.month_number, dim_date.month_name
-          ORDER BY dim_date.month_number ASC`,
-    params: ['quarter', 'quarter', 'borough', 'borough', 'zone', 'zone'],
+          GROUP BY dim_date.month, dim_date.month_name
+          ORDER BY dim_date.month ASC`,
+    params: ['year', 'year', 'quarter', 'quarter', 'borough', 'borough', 'zone', 'zone'],
   },
   report2_day: {
     sql: `SELECT
-            CAST(dim_date.day_number AS CHAR) AS label,
+            CAST(dim_date.day AS CHAR) AS label,
             COUNT(fact_trip.trip_key) AS total_trips,
             ROUND(SUM(fact_trip.total_amount), 2) AS total_revenue,
-            dim_date.day_number AS member_value
+            dim_date.day AS member_value
           FROM fact_trip, dim_date, dim_zone
           WHERE fact_trip.pickup_date_key = dim_date.date_key
             AND fact_trip.pickup_zone_key = dim_zone.zone_key
-            AND dim_date.year_number = 2025
-            AND (? IS NULL OR dim_date.quarter_number = ?)
-            AND (? IS NULL OR dim_date.month_number = ?)
+            AND (? IS NULL OR dim_date.year = ?)
+            AND (? IS NULL OR dim_date.quarter = ?)
+            AND (? IS NULL OR dim_date.month = ?)
             AND (? IS NULL OR dim_zone.borough IN (?))
             AND (? IS NULL OR dim_zone.zone_key IN (?))
-          GROUP BY dim_date.day_number
-          ORDER BY dim_date.day_number ASC`,
-    params: ['quarter', 'quarter', 'month', 'month', 'borough', 'borough', 'zone', 'zone'],
+          GROUP BY dim_date.day
+          ORDER BY dim_date.day ASC`,
+    params: ['year', 'year', 'quarter', 'quarter', 'month', 'month', 'borough', 'borough', 'zone', 'zone'],
   },
 
   // Report 3: Busiest times of day by location. Levels time_period > hour; no direction switch.
   report3_time_period: {
     sql: `SELECT
-            dim_time.time_period AS label,
+            dim_zone.borough AS label,
+            SUM(CASE WHEN dim_time.time_period = 'Morning' THEN 1 ELSE 0 END) AS morning_trips,
+            SUM(CASE WHEN dim_time.time_period = 'Afternoon' THEN 1 ELSE 0 END) AS afternoon_trips,
+            SUM(CASE WHEN dim_time.time_period = 'Evening' THEN 1 ELSE 0 END) AS evening_trips,
+            SUM(CASE WHEN dim_time.time_period = 'Night' THEN 1 ELSE 0 END) AS night_trips,
             COUNT(*) AS total_trips,
-            dim_time.time_period AS member_value
+            dim_zone.borough AS member_value
           FROM fact_trip, dim_zone, dim_time
           WHERE fact_trip.pickup_zone_key = dim_zone.zone_key
             AND fact_trip.pickup_time_key = dim_time.time_key
             AND dim_zone.borough IS NOT NULL
             AND dim_zone.borough != 'Unknown'
             AND (? IS NULL OR dim_zone.borough IN (?))
-          GROUP BY dim_time.time_period
-          ORDER BY MIN(dim_time.hour_number) ASC`,
+          GROUP BY dim_zone.borough
+          ORDER BY total_trips DESC`,
     params: ['borough', 'borough'],
   },
   report3_hour: {
     sql: `SELECT
-            CONCAT(CAST(dim_time.hour_number AS CHAR), ':00') AS label,
+            CONCAT(CAST(dim_time.hour AS CHAR), ':00') AS label,
             COUNT(*) AS total_trips,
-            dim_time.hour_number AS member_value
+            dim_time.hour AS member_value
           FROM fact_trip, dim_zone, dim_time
           WHERE fact_trip.pickup_zone_key = dim_zone.zone_key
             AND fact_trip.pickup_time_key = dim_time.time_key
             AND dim_zone.borough IS NOT NULL
             AND dim_zone.borough != 'Unknown'
-            AND (? IS NULL OR dim_time.time_period = ?)
             AND (? IS NULL OR dim_zone.borough IN (?))
-          GROUP BY dim_time.hour_number
-          ORDER BY dim_time.hour_number ASC`,
-    params: ['time_period', 'time_period', 'borough', 'borough'],
+          GROUP BY dim_time.hour
+          ORDER BY dim_time.hour ASC`,
+    params: ['borough', 'borough'],
   },
 
   // Report 4: Fares, distance and payment by location. No levels, no direction switch.
   report4: {
     sql: `SELECT
-            dim_zone.borough AS label,
-            dim_payment.payment_description AS payment_method,
+            CONCAT(dim_zone.borough, ' - ', dim_payment.payment_description) AS label,
             COUNT(*) AS total_trips,
             ROUND(AVG(fact_trip.trip_distance), 2) AS avg_distance,
             ROUND(AVG(fact_trip.fare_amount), 2) AS avg_fare,
@@ -295,10 +296,10 @@ const reports = {
             AND fact_trip.payment_key = dim_payment.payment_key
             AND dim_zone.borough IS NOT NULL
             AND dim_zone.borough != 'Unknown'
-            AND (? IS NULL OR dim_date.year_number = ?)
+            AND (? IS NULL OR dim_date.year = ?)
             AND (? IS NULL OR dim_zone.borough IN (?))
-            AND (? IS NULL OR dim_date.month_number >= ?)
-            AND (? IS NULL OR dim_date.month_number <= ?)
+            AND (? IS NULL OR dim_date.month >= ?)
+            AND (? IS NULL OR dim_date.month <= ?)
             AND (? IS NULL OR fact_trip.payment_key IN (?))
           GROUP BY dim_zone.borough, dim_payment.payment_description
           ORDER BY dim_zone.borough ASC, total_trips DESC`,
