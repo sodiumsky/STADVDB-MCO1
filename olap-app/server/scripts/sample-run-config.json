@@ -1,0 +1,43 @@
+{
+  "repeat": 3,
+  "runs": [
+    {
+      "label": "Report 1 by borough, pickup, no filters",
+      "report": "report1",
+      "level": "borough",
+      "direction": "pickup",
+      "filters": {}
+    },
+    {
+      "label": "Report 1 by zone, drop-off, top 10 in Manhattan",
+      "report": "report1",
+      "level": "zone",
+      "direction": "dropoff",
+      "filters": { "borough": ["Manhattan"], "top_n": 10 }
+    },
+    {
+      "label": "Report 1 by borough, combined",
+      "report": "report1",
+      "level": "borough",
+      "direction": "combined",
+      "filters": {}
+    },
+    {
+      "label": "Report 2 by month in Q1",
+      "report": "report2",
+      "level": "month",
+      "filters": { "quarter": 1 }
+    },
+    {
+      "label": "Report 3 by hour in one time period",
+      "report": "report3",
+      "level": "hour",
+      "filters": { "time_period": "Morning" }
+    },
+    {
+      "label": "Report 4 dice: two boroughs, months 1 to 3",
+      "report": "report4",
+      "filters": { "borough": ["Manhattan", "Brooklyn"], "month_from": 1, "month_to": 3 }
+    }
+  ]
+}
