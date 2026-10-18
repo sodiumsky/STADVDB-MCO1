@@ -99,31 +99,30 @@ const lookups = {
 // ---------------------------------------------------------------------------------------------
 const reports = {
   // Report 1: Busiest pickup and drop-off zones. Levels borough > zone; pickup, dropoff, combined.
-  // 'combined' = pickups and drop-offs added together per location.
   report1_borough_pickup: {
     sql: `SELECT
-            dim_zone.borough AS label,
+            z.borough AS label,
             COUNT(*) AS total_trips
-          FROM fact_trip, dim_zone
-          WHERE fact_trip.pickup_zone_key = dim_zone.zone_key
-            AND dim_zone.borough IS NOT NULL
-            AND dim_zone.borough != 'Unknown'
-            AND (? IS NULL OR dim_zone.borough IN (?))
-          GROUP BY dim_zone.borough
+          FROM fact_trip f
+          INNER JOIN dim_zone z ON f.pickup_zone_key = z.zone_key
+          WHERE z.borough IS NOT NULL
+            AND z.borough != 'Unknown'
+            AND (? IS NULL OR z.borough IN (?))
+          GROUP BY z.borough
           ORDER BY total_trips DESC
           LIMIT ?`,
     params: ['borough', 'borough', 'top_n'],
   },
   report1_borough_dropoff: {
     sql: `SELECT
-            dim_zone.borough AS label,
+            z.borough AS label,
             COUNT(*) AS total_trips
-          FROM fact_trip, dim_zone
-          WHERE fact_trip.dropoff_zone_key = dim_zone.zone_key
-            AND dim_zone.borough IS NOT NULL
-            AND dim_zone.borough != 'Unknown'
-            AND (? IS NULL OR dim_zone.borough IN (?))
-          GROUP BY dim_zone.borough
+          FROM fact_trip f
+          INNER JOIN dim_zone z ON f.dropoff_zone_key = z.zone_key
+          WHERE z.borough IS NOT NULL
+            AND z.borough != 'Unknown'
+            AND (? IS NULL OR z.borough IN (?))
+          GROUP BY z.borough
           ORDER BY total_trips DESC
           LIMIT ?`,
     params: ['borough', 'borough', 'top_n'],
@@ -136,9 +135,9 @@ const reports = {
             SELECT pickup_zone_key AS zk, COUNT(*) AS cnt FROM fact_trip GROUP BY pickup_zone_key
             UNION ALL
             SELECT dropoff_zone_key AS zk, COUNT(*) AS cnt FROM fact_trip GROUP BY dropoff_zone_key
-          ) t, dim_zone z
-          WHERE t.zk = z.zone_key
-            AND z.borough IS NOT NULL
+          ) t
+          INNER JOIN dim_zone z ON t.zk = z.zone_key
+          WHERE z.borough IS NOT NULL
             AND z.borough != 'Unknown'
             AND (? IS NULL OR z.borough IN (?))
           GROUP BY z.borough
@@ -148,28 +147,28 @@ const reports = {
   },
   report1_zone_pickup: {
     sql: `SELECT
-            dim_zone.zone_name AS label,
+            z.zone_name AS label,
             COUNT(*) AS total_trips
-          FROM fact_trip, dim_zone
-          WHERE fact_trip.pickup_zone_key = dim_zone.zone_key
-            AND dim_zone.zone_key != 0
-            AND dim_zone.zone_name IS NOT NULL
-            AND (? IS NULL OR dim_zone.borough IN (?))
-          GROUP BY dim_zone.zone_key, dim_zone.zone_name
+          FROM fact_trip f
+          INNER JOIN dim_zone z ON f.pickup_zone_key = z.zone_key
+          WHERE z.zone_key != 0
+            AND z.zone_name IS NOT NULL
+            AND (? IS NULL OR z.borough IN (?))
+          GROUP BY z.zone_key, z.zone_name
           ORDER BY total_trips DESC
           LIMIT ?`,
     params: ['borough', 'borough', 'top_n'],
   },
   report1_zone_dropoff: {
     sql: `SELECT
-            dim_zone.zone_name AS label,
+            z.zone_name AS label,
             COUNT(*) AS total_trips
-          FROM fact_trip, dim_zone
-          WHERE fact_trip.dropoff_zone_key = dim_zone.zone_key
-            AND dim_zone.zone_key != 0
-            AND dim_zone.zone_name IS NOT NULL
-            AND (? IS NULL OR dim_zone.borough IN (?))
-          GROUP BY dim_zone.zone_key, dim_zone.zone_name
+          FROM fact_trip f
+          INNER JOIN dim_zone z ON f.dropoff_zone_key = z.zone_key
+          WHERE z.zone_key != 0
+            AND z.zone_name IS NOT NULL
+            AND (? IS NULL OR z.borough IN (?))
+          GROUP BY z.zone_key, z.zone_name
           ORDER BY total_trips DESC
           LIMIT ?`,
     params: ['borough', 'borough', 'top_n'],
@@ -182,9 +181,9 @@ const reports = {
             SELECT pickup_zone_key AS zk, COUNT(*) AS cnt FROM fact_trip GROUP BY pickup_zone_key
             UNION ALL
             SELECT dropoff_zone_key AS zk, COUNT(*) AS cnt FROM fact_trip GROUP BY dropoff_zone_key
-          ) t, dim_zone z
-          WHERE t.zk = z.zone_key
-            AND z.zone_key != 0
+          ) t
+          INNER JOIN dim_zone z ON t.zk = z.zone_key
+          WHERE z.zone_key != 0
             AND z.zone_name IS NOT NULL
             AND (? IS NULL OR z.borough IN (?))
           GROUP BY z.zone_key, z.zone_name
@@ -196,113 +195,113 @@ const reports = {
   // Report 2: Taxi activity over the year. Levels quarter > month > day; no direction switch.
   report2_quarter: {
     sql: `SELECT
-            CONCAT('Q', dim_date.quarter) AS label,
-            COUNT(fact_trip.trip_key) AS total_trips,
-            ROUND(SUM(fact_trip.total_amount), 2) AS total_revenue,
-            dim_date.quarter AS member_value
-          FROM fact_trip, dim_date, dim_zone
-          WHERE fact_trip.pickup_date_key = dim_date.date_key
-            AND fact_trip.pickup_zone_key = dim_zone.zone_key
-            AND (? IS NULL OR dim_date.year = ?)
-            AND (? IS NULL OR dim_zone.borough IN (?))
-            AND (? IS NULL OR dim_zone.zone_key IN (?))
-          GROUP BY dim_date.quarter
-          ORDER BY dim_date.quarter ASC`,
+            CONCAT('Q', d.quarter) AS label,
+            COUNT(*) AS total_trips,
+            ROUND(SUM(f.total_amount), 2) AS total_revenue,
+            d.quarter AS member_value
+          FROM fact_trip f
+          INNER JOIN dim_date d ON f.pickup_date_key = d.date_key
+          INNER JOIN dim_zone z ON f.pickup_zone_key = z.zone_key
+          WHERE (? IS NULL OR d.year = ?)
+            AND (? IS NULL OR z.borough IN (?))
+            AND (? IS NULL OR z.zone_key IN (?))
+          GROUP BY d.quarter
+          ORDER BY d.quarter ASC`,
     params: ['year', 'year', 'borough', 'borough', 'zone', 'zone'],
   },
   report2_month: {
     sql: `SELECT
-            dim_date.month_name AS label,
-            COUNT(fact_trip.trip_key) AS total_trips,
-            ROUND(SUM(fact_trip.total_amount), 2) AS total_revenue,
-            dim_date.month AS member_value
-          FROM fact_trip, dim_date, dim_zone
-          WHERE fact_trip.pickup_date_key = dim_date.date_key
-            AND fact_trip.pickup_zone_key = dim_zone.zone_key
-            AND (? IS NULL OR dim_date.year = ?)
-            AND (? IS NULL OR dim_date.quarter = ?)
-            AND (? IS NULL OR dim_zone.borough IN (?))
-            AND (? IS NULL OR dim_zone.zone_key IN (?))
-          GROUP BY dim_date.month, dim_date.month_name
-          ORDER BY dim_date.month ASC`,
+            d.month_name AS label,
+            COUNT(*) AS total_trips,
+            ROUND(SUM(f.total_amount), 2) AS total_revenue,
+            d.month AS member_value
+          FROM fact_trip f
+          INNER JOIN dim_date d ON f.pickup_date_key = d.date_key
+          INNER JOIN dim_zone z ON f.pickup_zone_key = z.zone_key
+          WHERE (? IS NULL OR d.year = ?)
+            AND (? IS NULL OR d.quarter = ?)
+            AND (? IS NULL OR z.borough IN (?))
+            AND (? IS NULL OR z.zone_key IN (?))
+          GROUP BY d.month, d.month_name
+          ORDER BY d.month ASC`,
     params: ['year', 'year', 'quarter', 'quarter', 'borough', 'borough', 'zone', 'zone'],
   },
   report2_day: {
     sql: `SELECT
-            CAST(dim_date.day AS CHAR) AS label,
-            COUNT(fact_trip.trip_key) AS total_trips,
-            ROUND(SUM(fact_trip.total_amount), 2) AS total_revenue,
-            dim_date.day AS member_value
-          FROM fact_trip, dim_date, dim_zone
-          WHERE fact_trip.pickup_date_key = dim_date.date_key
-            AND fact_trip.pickup_zone_key = dim_zone.zone_key
-            AND (? IS NULL OR dim_date.year = ?)
-            AND (? IS NULL OR dim_date.quarter = ?)
-            AND (? IS NULL OR dim_date.month = ?)
-            AND (? IS NULL OR dim_zone.borough IN (?))
-            AND (? IS NULL OR dim_zone.zone_key IN (?))
-          GROUP BY dim_date.day
-          ORDER BY dim_date.day ASC`,
+            CAST(d.day AS CHAR) AS label,
+            COUNT(*) AS total_trips,
+            ROUND(SUM(f.total_amount), 2) AS total_revenue,
+            d.day AS member_value
+          FROM fact_trip f
+          INNER JOIN dim_date d ON f.pickup_date_key = d.date_key
+          INNER JOIN dim_zone z ON f.pickup_zone_key = z.zone_key
+          WHERE (? IS NULL OR d.year = ?)
+            AND (? IS NULL OR d.quarter = ?)
+            AND (? IS NULL OR d.month = ?)
+            AND (? IS NULL OR z.borough IN (?))
+            AND (? IS NULL OR z.zone_key IN (?))
+          GROUP BY d.day
+          ORDER BY d.day ASC`,
     params: ['year', 'year', 'quarter', 'quarter', 'month', 'month', 'borough', 'borough', 'zone', 'zone'],
   },
 
   // Report 3: Busiest times of day by location. Levels time_period > hour; no direction switch.
   report3_time_period: {
     sql: `SELECT
-            dim_zone.borough AS label,
-            SUM(CASE WHEN dim_time.time_period = 'Morning' THEN 1 ELSE 0 END) AS morning_trips,
-            SUM(CASE WHEN dim_time.time_period = 'Afternoon' THEN 1 ELSE 0 END) AS afternoon_trips,
-            SUM(CASE WHEN dim_time.time_period = 'Evening' THEN 1 ELSE 0 END) AS evening_trips,
-            SUM(CASE WHEN dim_time.time_period = 'Night' THEN 1 ELSE 0 END) AS night_trips,
+            z.borough AS label,
+            SUM(CASE WHEN t.time_period = 'Morning' THEN 1 ELSE 0 END) AS morning_trips,
+            SUM(CASE WHEN t.time_period = 'Afternoon' THEN 1 ELSE 0 END) AS afternoon_trips,
+            SUM(CASE WHEN t.time_period = 'Evening' THEN 1 ELSE 0 END) AS evening_trips,
+            SUM(CASE WHEN t.time_period = 'Night' THEN 1 ELSE 0 END) AS night_trips,
             COUNT(*) AS total_trips,
-            dim_zone.borough AS member_value
-          FROM fact_trip, dim_zone, dim_time
-          WHERE fact_trip.pickup_zone_key = dim_zone.zone_key
-            AND fact_trip.pickup_time_key = dim_time.time_key
-            AND dim_zone.borough IS NOT NULL
-            AND dim_zone.borough != 'Unknown'
-            AND (? IS NULL OR dim_zone.borough IN (?))
-          GROUP BY dim_zone.borough
+            z.borough AS member_value
+          FROM fact_trip f
+          INNER JOIN dim_zone z ON f.pickup_zone_key = z.zone_key
+          INNER JOIN dim_time t ON f.pickup_time_key = t.time_key
+          WHERE z.borough IS NOT NULL
+            AND z.borough != 'Unknown'
+            AND (? IS NULL OR z.borough IN (?))
+          GROUP BY z.borough
           ORDER BY total_trips DESC`,
     params: ['borough', 'borough'],
   },
   report3_hour: {
     sql: `SELECT
-            CONCAT(CAST(dim_time.hour AS CHAR), ':00') AS label,
+            CONCAT(t.hour, ':00') AS label,
             COUNT(*) AS total_trips,
-            dim_time.hour AS member_value
-          FROM fact_trip, dim_zone, dim_time
-          WHERE fact_trip.pickup_zone_key = dim_zone.zone_key
-            AND fact_trip.pickup_time_key = dim_time.time_key
-            AND dim_zone.borough IS NOT NULL
-            AND dim_zone.borough != 'Unknown'
-            AND (? IS NULL OR dim_zone.borough IN (?))
-          GROUP BY dim_time.hour
-          ORDER BY dim_time.hour ASC`,
+            t.hour AS member_value
+          FROM fact_trip f
+          INNER JOIN dim_zone z ON f.pickup_zone_key = z.zone_key
+          INNER JOIN dim_time t ON f.pickup_time_key = t.time_key
+          WHERE z.borough IS NOT NULL
+            AND z.borough != 'Unknown'
+            AND (? IS NULL OR z.borough IN (?))
+          GROUP BY t.hour
+          ORDER BY t.hour ASC`,
     params: ['borough', 'borough'],
   },
 
   // Report 4: Fares, distance and payment by location. No levels, no direction switch.
   report4: {
     sql: `SELECT
-            CONCAT(dim_zone.borough, ' - ', dim_payment.payment_description) AS label,
+            CONCAT(z.borough, ' - ', p.payment_description) AS label,
             COUNT(*) AS total_trips,
-            ROUND(AVG(fact_trip.trip_distance), 2) AS avg_distance,
-            ROUND(AVG(fact_trip.fare_amount), 2) AS avg_fare,
-            ROUND(AVG(fact_trip.total_amount), 2) AS avg_total
-          FROM fact_trip, dim_zone, dim_date, dim_payment
-          WHERE fact_trip.pickup_zone_key = dim_zone.zone_key
-            AND fact_trip.pickup_date_key = dim_date.date_key
-            AND fact_trip.payment_key = dim_payment.payment_key
-            AND dim_zone.borough IS NOT NULL
-            AND dim_zone.borough != 'Unknown'
-            AND (? IS NULL OR dim_date.year = ?)
-            AND (? IS NULL OR dim_zone.borough IN (?))
-            AND (? IS NULL OR dim_date.month >= ?)
-            AND (? IS NULL OR dim_date.month <= ?)
-            AND (? IS NULL OR fact_trip.payment_key IN (?))
-          GROUP BY dim_zone.borough, dim_payment.payment_description
-          ORDER BY dim_zone.borough ASC, total_trips DESC`,
+            ROUND(AVG(f.trip_distance), 2) AS avg_distance,
+            ROUND(AVG(f.fare_amount), 2) AS avg_fare,
+            ROUND(AVG(f.total_amount), 2) AS avg_total
+          FROM fact_trip f
+          INNER JOIN dim_zone z ON f.pickup_zone_key = z.zone_key
+          INNER JOIN dim_date d ON f.pickup_date_key = d.date_key
+          INNER JOIN dim_payment p ON f.payment_key = p.payment_key
+          WHERE z.borough IS NOT NULL
+            AND z.borough != 'Unknown'
+            AND (? IS NULL OR d.year = ?)
+            AND (? IS NULL OR z.borough IN (?))
+            AND (? IS NULL OR d.month >= ?)
+            AND (? IS NULL OR d.month <= ?)
+            AND (? IS NULL OR f.payment_key IN (?))
+          GROUP BY z.borough, p.payment_description
+          ORDER BY z.borough ASC, total_trips DESC`,
     params: [
       'year', 'year',
       'borough', 'borough',
