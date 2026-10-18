@@ -1,9 +1,28 @@
+
+# Node.js
 node_modules/
+
+# Environment variables and secrets
 .env
 .env.*
 !.env.example
 
+# Local datasets
 data/*.parquet
 data/*.csv
 
+# Logs
 *.log
+
+# Python virtual environments
+.venv/
+venv/
+env/
+
+# Python cache and compiled files
+__pycache__/
+*.py[cod]
+
+# Local Python/testing artifacts
+.pytest_cache/
+.mypy_cache/
