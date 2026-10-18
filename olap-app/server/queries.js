@@ -49,37 +49,30 @@
 // ---------------------------------------------------------------------------------------------
 const lookups = {
   year: {
-    // written by the team
     sql: `SELECT DISTINCT year AS value, CAST(year AS CHAR) AS label FROM dim_date ORDER BY year DESC`,
     params: [],
   },
   quarter: {
-    // written by the team
     sql: `SELECT DISTINCT quarter AS value, CONCAT('Q', quarter) AS label FROM dim_date ORDER BY quarter ASC`,
     params: [],
   },
   month: {
-    // written by the team
     sql: `SELECT DISTINCT month AS value, month_name AS label FROM dim_date ORDER BY month ASC`,
     params: [],
   },
   day: {
-    // written by the team
     sql: `SELECT DISTINCT day AS value, CAST(day AS CHAR) AS label FROM dim_date ORDER BY day ASC`,
     params: [],
   },
   time_period: {
-    // written by the team
     sql: `SELECT time_period AS value, time_period AS label FROM dim_time GROUP BY time_period ORDER BY MIN(hour) ASC`,
     params: [],
   },
   hour: {
-    // written by the team
     sql: `SELECT DISTINCT hour AS value, CONCAT(CAST(hour AS CHAR), ':00') AS label FROM dim_time ORDER BY hour ASC`,
     params: [],
   },
   borough: {
-    // written by the team
     sql: `SELECT DISTINCT borough AS value, borough AS label FROM dim_zone WHERE borough IS NOT NULL AND borough != 'Unknown' ORDER BY borough ASC`,
     params: [],
   },
@@ -88,7 +81,6 @@ const lookups = {
     params: [],
   },
   payment_type: {
-    // written by the team
     sql: `SELECT DISTINCT payment_key AS value, payment_description AS label FROM dim_payment ORDER BY payment_description ASC`,
     params: [],
   },
