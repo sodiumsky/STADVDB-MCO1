@@ -49,39 +49,85 @@
 // ---------------------------------------------------------------------------------------------
 const lookups = {
   year: {
-    sql: `SELECT DISTINCT year AS value, CAST(year AS CHAR) AS label FROM dim_date ORDER BY year DESC`,
+    // written by the team
+    sql: `SELECT 
+            DISTINCT year AS value, 
+            CAST(year AS CHAR) AS label 
+          FROM dim_date 
+          ORDER BY year DESC`,
     params: [],
   },
   quarter: {
-    sql: `SELECT DISTINCT quarter AS value, CONCAT('Q', quarter) AS label FROM dim_date ORDER BY quarter ASC`,
+    // written by the team
+    sql: `SELECT 
+            DISTINCT quarter AS value, 
+            CONCAT('Q', quarter) AS label 
+          FROM dim_date 
+          ORDER BY quarter ASC`,
     params: [],
   },
   month: {
-    sql: `SELECT DISTINCT month AS value, month_name AS label FROM dim_date ORDER BY month ASC`,
+    // written by the team
+    sql: `SELECT 
+            DISTINCT month AS value, 
+            month_name AS label 
+          FROM dim_date 
+          ORDER BY month ASC`,
     params: [],
   },
   day: {
-    sql: `SELECT DISTINCT day AS value, CAST(day AS CHAR) AS label FROM dim_date ORDER BY day ASC`,
+    // written by the team
+    sql: `SELECT 
+            DISTINCT day AS value,  
+            CAST(day AS CHAR) AS label 
+          FROM dim_date 
+          ORDER BY day ASC`,
     params: [],
   },
   time_period: {
-    sql: `SELECT time_period AS value, time_period AS label FROM dim_time GROUP BY time_period ORDER BY MIN(hour) ASC`,
+    // written by the team
+    sql: `SELECT 
+            time_period AS value, 
+            time_period AS label 
+          FROM dim_time 
+          GROUP BY time_period 
+          ORDER BY MIN(hour) ASC`,
     params: [],
   },
   hour: {
-    sql: `SELECT DISTINCT hour AS value, CONCAT(CAST(hour AS CHAR), ':00') AS label FROM dim_time ORDER BY hour ASC`,
+    // written by the team
+    sql: `SELECT 
+            DISTINCT hour AS value,   
+            CONCAT(CAST(hour AS CHAR), ':00') AS label 
+          FROM dim_time 
+          ORDER BY hour ASC`,
     params: [],
   },
   borough: {
-    sql: `SELECT DISTINCT borough AS value, borough AS label FROM dim_zone WHERE borough IS NOT NULL AND borough != 'Unknown' ORDER BY borough ASC`,
+    // written by the team
+    sql: `SELECT 
+            DISTINCT borough AS value, 
+            borough AS label FROM dim_zone 
+          WHERE borough IS NOT NULL AND borough != 'Unknown' 
+          ORDER BY borough ASC`,
     params: [],
   },
   zone: {
-    sql: `SELECT zone_key AS value, zone_name AS label FROM dim_zone WHERE zone_key != 0 AND zone_name IS NOT NULL ORDER BY zone_name ASC`,
+    sql: `SELECT 
+            zone_key AS value, 
+            zone_name AS label 
+          FROM dim_zone 
+          WHERE zone_key != 0 AND zone_name IS NOT NULL   
+          ORDER BY zone_name ASC`,
     params: [],
   },
   payment_type: {
-    sql: `SELECT DISTINCT payment_key AS value, payment_description AS label FROM dim_payment ORDER BY payment_description ASC`,
+    // written by the team
+    sql: `SELECT 
+            DISTINCT payment_key AS value, 
+            payment_description AS label 
+          FROM dim_payment 
+          ORDER BY payment_description ASC`,
     params: [],
   },
 };
