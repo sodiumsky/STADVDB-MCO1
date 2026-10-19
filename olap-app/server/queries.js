@@ -49,7 +49,6 @@
 // ---------------------------------------------------------------------------------------------
 const lookups = {
   year: {
-    // written by the team
     sql: `SELECT 
             DISTINCT year AS value, 
             CAST(year AS CHAR) AS label 
@@ -58,7 +57,6 @@ const lookups = {
     params: [],
   },
   quarter: {
-    // written by the team
     sql: `SELECT 
             DISTINCT quarter AS value, 
             CONCAT('Q', quarter) AS label 
@@ -67,7 +65,6 @@ const lookups = {
     params: [],
   },
   month: {
-    // written by the team
     sql: `SELECT 
             DISTINCT month AS value, 
             month_name AS label 
@@ -76,7 +73,6 @@ const lookups = {
     params: [],
   },
   day: {
-    // written by the team
     sql: `SELECT 
             DISTINCT day AS value,  
             CAST(day AS CHAR) AS label 
@@ -85,7 +81,6 @@ const lookups = {
     params: [],
   },
   time_period: {
-    // written by the team
     sql: `SELECT 
             time_period AS value, 
             time_period AS label 
@@ -95,7 +90,6 @@ const lookups = {
     params: [],
   },
   hour: {
-    // written by the team
     sql: `SELECT 
             DISTINCT hour AS value,   
             CONCAT(CAST(hour AS CHAR), ':00') AS label 
@@ -104,7 +98,6 @@ const lookups = {
     params: [],
   },
   borough: {
-    // written by the team
     sql: `SELECT 
             DISTINCT borough AS value, 
             borough AS label FROM dim_zone 
@@ -122,7 +115,6 @@ const lookups = {
     params: [],
   },
   payment_type: {
-    // written by the team
     sql: `SELECT 
             DISTINCT payment_key AS value, 
             payment_description AS label 
