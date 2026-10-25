@@ -91,7 +91,8 @@ async function executeQuery(sql, values) {
   }
   const bound = bindPlaceholders(sql, values);
   const started = process.hrtime.bigint();
-  const [rows] = await pool.execute(bound.sql, bound.params);
+  // query() rather than execute(): TiDB rejects LIMIT ? in a server-side prepared statement.
+  const [rows] = await pool.query(bound.sql, bound.params);
   const ms = Number(process.hrtime.bigint() - started) / 1e6;
   const list = Array.isArray(rows) ? rows : [];
   return {

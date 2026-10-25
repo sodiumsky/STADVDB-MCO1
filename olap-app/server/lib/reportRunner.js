@@ -22,8 +22,7 @@ function valueFor(name, ctx) {
     const limit = raw === undefined || raw === null || raw === '' || !Number.isFinite(n) || n < 1
       ? FILTERS.top_n.max
       : Math.min(n, FILTERS.top_n.max);
-    // mysql2 sends JS numbers as DOUBLE, which MySQL rejects for LIMIT ?. A string is accepted.
-    return String(limit);
+    return limit;
   }
   if (raw === undefined || raw === null || raw === '') return null;
   return raw;
