@@ -1,6 +1,5 @@
 // All warehouse SQL for the app goes in this file, and only in this file.
 //
-// Every `sql` below is deliberately EMPTY. The team writes them.
 // An empty `sql` makes the UI show "Query not written yet" instead of an error.
 //
 // HOW AN ENTRY WORKS
@@ -13,7 +12,6 @@
 //             borough, zone, payment_type,                       (arrays, [] if nothing chosen)
 //             top_n                                              (integer, or null)
 //             level, direction                                   (the current level id / direction)
-//           The lists below are a starting point: edit them to match the `?` in your SQL.
 //           Deeper drill levels list the filters set by the drill (for example report2_day lists
 //           quarter and month, because clicking a quarter and then a month sets them).
 //
