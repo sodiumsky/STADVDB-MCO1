@@ -10,8 +10,12 @@ const config = {
   database: process.env.DB_NAME || undefined,
 };
 
+// Hosted MySQL services usually require an encrypted connection. Set DB_SSL=true to turn it on.
+const ssl = process.env.DB_SSL === 'true' ? { minVersion: 'TLSv1.2', rejectUnauthorized: true } : undefined;
+
 const pool = mysql.createPool({
   ...config,
+  ssl,
   waitForConnections: true,
   connectionLimit: 10,
   connectTimeout: 5000,

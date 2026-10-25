@@ -1,3 +1,5 @@
+const path = require('path');
+const fs = require('fs');
 const express = require('express');
 const { config, ping } = require('./db');
 const api = require('./routes/api');
@@ -9,6 +11,17 @@ app.use('/api', api);
 app.use('/api', (req, res) => {
   res.status(404).json({ error: { code: 'NOT_FOUND', message: `No API route for ${req.method} ${req.originalUrl}.` } });
 });
+
+// In production the built React app is served from here, so one URL handles pages and API.
+const clientDist = path.join(__dirname, '..', 'client', 'dist');
+if (fs.existsSync(path.join(clientDist, 'index.html'))) {
+  app.use(express.static(clientDist));
+  // BrowserRouter paths such as /reports/report1 must load the app, not 404.
+  app.use((req, res, next) => {
+    if (req.method !== 'GET' || path.extname(req.path)) return next();
+    res.sendFile(path.join(clientDist, 'index.html'));
+  });
+}
 
 app.use((err, req, res, next) => {
   const status = err.status || 400;
