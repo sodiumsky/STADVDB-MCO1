@@ -41,12 +41,10 @@
 //   lookups: the filter name. A lookup returns rows with columns `value` and `label`
 //   (or, if those are missing, the first column as the value and the second as the label).
 
-// ---------------------------------------------------------------------------------------------
 // Filter lookups (dropdown options)
 // Used by: borough (reports 1-4), zone (report 2), payment_type (report 4), month (report 4,
 // as both From month and To month). The rest are not shown by any report yet but are kept so a
 // report can start using them without a registry change.
-// ---------------------------------------------------------------------------------------------
 const lookups = {
   year: {
     sql: `SELECT 
@@ -124,9 +122,7 @@ const lookups = {
   },
 };
 
-// ---------------------------------------------------------------------------------------------
 // Reports
-// ---------------------------------------------------------------------------------------------
 const reports = {
   // Report 1: Busiest pickup and drop-off zones. Levels borough > zone; pickup, dropoff, combined.
   report1_borough_pickup: {
