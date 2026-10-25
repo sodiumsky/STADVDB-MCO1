@@ -4,9 +4,10 @@
   "private": true,
   "description": "OLAP web application for the NYC Green Taxi 2025 data warehouse",
   "scripts": {
-    "postinstall": "npm install --prefix server && npm install --prefix client",
+    "postinstall": "npm install --prefix server && npm install --prefix client --include=dev",
     "dev": "concurrently -n server,client -c green,cyan \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
     "build": "npm run build --prefix client",
+    "start": "node server/index.js",
     "run-reports": "npm run run-reports --prefix server --"
   },
   "devDependencies": {

@@ -1,6 +1,5 @@
 // All warehouse SQL for the app goes in this file, and only in this file.
 //
-// Every `sql` below is deliberately EMPTY. The team writes them.
 // An empty `sql` makes the UI show "Query not written yet" instead of an error.
 //
 // HOW AN ENTRY WORKS
@@ -13,7 +12,6 @@
 //             borough, zone, payment_type,                       (arrays, [] if nothing chosen)
 //             top_n                                              (integer, or null)
 //             level, direction                                   (the current level id / direction)
-//           The lists below are a starting point: edit them to match the `?` in your SQL.
 //           Deeper drill levels list the filters set by the drill (for example report2_day lists
 //           quarter and month, because clicking a quarter and then a month sets them).
 //
@@ -41,12 +39,10 @@
 //   lookups: the filter name. A lookup returns rows with columns `value` and `label`
 //   (or, if those are missing, the first column as the value and the second as the label).
 
-// ---------------------------------------------------------------------------------------------
 // Filter lookups (dropdown options)
 // Used by: borough (reports 1-4), zone (report 2), payment_type (report 4), month (report 4,
 // as both From month and To month). The rest are not shown by any report yet but are kept so a
 // report can start using them without a registry change.
-// ---------------------------------------------------------------------------------------------
 const lookups = {
   year: {
     sql: `SELECT 
@@ -124,9 +120,7 @@ const lookups = {
   },
 };
 
-// ---------------------------------------------------------------------------------------------
 // Reports
-// ---------------------------------------------------------------------------------------------
 const reports = {
   // Report 1: Busiest pickup and drop-off zones. Levels borough > zone; pickup, dropoff, combined.
   report1_borough_pickup: {

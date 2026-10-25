@@ -26,3 +26,7 @@ __pycache__/
 # Local Python/testing artifacts
 .pytest_cache/
 .mypy_cache/
+
+# Database dumps (too large for GitHub; load them into MySQL instead)
+green_taxi_dw.sql
+green_taxi_january_2025.sql

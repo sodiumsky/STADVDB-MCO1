@@ -67,7 +67,7 @@ Open a report from the home page, then:
 
 ## For the team
 
-**Files:** `server/queries.js` (all SQL), `server/reports.js` (reports, filters, levels, chart types), `server/queries_previos.js` (old queries, not used), `server/scripts/` (test runner).
+**Files:** `server/queries.js` (all SQL), `server/reports.js` (reports, filters, levels, chart types), `server/scripts/` (test runner).
 
 **Query entries** in `queries.js` look like this:
 

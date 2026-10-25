@@ -255,7 +255,7 @@ export default function ReportPage() {
     return (
       <main id="main" className="page narrow">
         <h1>Report not found</h1>
-        <p className="lede">There is no report with the id “{id}”. <Link to="/">Go to the report list</Link>.</p>
+        <p className="lede">There is no report with the id &quot;{id}&quot;. <Link to="/">Go to the report list</Link>.</p>
       </main>
     );
   }
